@@ -34,13 +34,24 @@ ELASTICSEARCH_INDEX=your_index_name
 uvicorn app.main:app --reload
 ```
 
-## Test Data Generation
+## Test Data Generation and Usage
 
-The application includes a test data generator that creates realistic Snort alerts, including various failure scenarios. To generate test data:
+The application includes a test data generator that creates realistic Snort alerts, including various failure scenarios. This is useful for testing and development without needing a live Snort installation.
 
+### Generating Test Data
+
+1. Generate test alerts:
 ```bash
 python -m app.scripts.generate_test_alerts
 ```
+This will create a file at `~/snort_test/alert` with sample alerts.
+
+2. Index the alerts in Elasticsearch:
+```bash
+python -m app.scripts.index_alerts
+```
+
+### Sample Data Contents
 
 The generator creates alerts with the following failure scenarios:
 
@@ -61,9 +72,9 @@ The generator creates alerts with the following failure scenarios:
    - HTTP Inspect preprocessor errors
    - Invalid protocol handling
 
-## Interactive AI Chat
+### Analyzing Sample Data
 
-Use the interactive CLI to discuss Snort issues with the AI:
+After generating and indexing the test data, you can use the AI chat interface to analyze the failures:
 
 ```bash
 python -m app.cli.ai_chat
@@ -74,6 +85,8 @@ Example questions you can ask:
 2. "What does the Stream5 TCP packet out of state error mean?"
 3. "How can I fix the Frag3 fragment reassembly failures?"
 4. "What's causing the HTTP Inspect preprocessor to fail?"
+
+The AI will analyze these alerts and provide insights into why Snort failed and how to address each issue.
 
 ## Project Structure
 
