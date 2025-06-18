@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     # Elasticsearch Configuration
     elasticsearch_url: str = os.getenv("ELASTICSEARCH_URL", "")
     elasticsearch_api_key: str = os.getenv("ELASTICSEARCH_API_KEY", "")
+    elasticsearch_index: str = os.getenv("ELASTICSEARCH_INDEX", "snort-alerts")
     
     # Snort Configuration
     snort_alert_file: str = os.getenv("SNORT_ALERT_FILE", "/var/log/snort/alert")

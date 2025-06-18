@@ -4,9 +4,13 @@ from typing import Optional, List
 import logging
 from app.models.snort import SnortAlert
 from app.config import get_settings
+import os
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
+
+# Change the alert file path to use a path in the user's home directory
+alert_file = os.path.expanduser("~/snort_test/alert")
 
 class SnortAlertProcessor:
     def __init__(self):
