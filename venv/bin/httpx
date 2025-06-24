@@ -1,4 +1,4 @@
-#!/opt/snortai/venv/bin/python3.11
+#!/opt/snortai/venv/bin/python3.13
 # -*- coding: utf-8 -*-
 import re
 import sys

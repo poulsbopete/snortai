@@ -38,21 +38,27 @@ interface Alert {
 const AlertDashboard: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: Replace with actual API call
     const fetchAlerts = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/alerts');
+        const response = await fetch('https://u3jq640fv3.execute-api.us-east-1.amazonaws.com/api/alerts');
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
         const data = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error('API did not return an array');
+        }
         setAlerts(data);
-      } catch (error) {
-        console.error('Error fetching alerts:', error);
+      } catch (error: any) {
+        setError(error.message || 'Error fetching alerts');
+        setAlerts([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchAlerts();
   }, []);
 
@@ -88,19 +94,27 @@ const AlertDashboard: React.FC = () => {
           <Typography component="h2" variant="h6" color="primary" gutterBottom>
             Alert Timeline
           </Typography>
-          <Line
-            data={chartData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  reverse: true,
+          {loading ? (
+            <Typography>Loading...</Typography>
+          ) : error ? (
+            <Typography color="error">{error}</Typography>
+          ) : alerts.length === 0 ? (
+            <Typography>No alerts found.</Typography>
+          ) : (
+            <Line
+              data={chartData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    reverse: true,
+                  },
                 },
-              },
-            }}
-          />
+              }}
+            />
+          )}
         </Paper>
       </Grid>
       <Grid item xs={12} md={4}>
@@ -108,13 +122,21 @@ const AlertDashboard: React.FC = () => {
           <Typography component="h2" variant="h6" color="primary" gutterBottom>
             Alert Types
           </Typography>
-          <Bar
-            data={alertTypesData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-            }}
-          />
+          {loading ? (
+            <Typography>Loading...</Typography>
+          ) : error ? (
+            <Typography color="error">{error}</Typography>
+          ) : alerts.length === 0 ? (
+            <Typography>No alerts found.</Typography>
+          ) : (
+            <Bar
+              data={alertTypesData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+              }}
+            />
+          )}
         </Paper>
       </Grid>
       <Grid item xs={12}>
@@ -122,24 +144,32 @@ const AlertDashboard: React.FC = () => {
           <Typography component="h2" variant="h6" color="primary" gutterBottom>
             Recent Alerts
           </Typography>
-          <List>
-            {alerts.slice(0, 10).map((alert, index) => (
-              <ListItem key={index} divider>
-                <ListItemText
-                  primary={alert.message}
-                  secondary={
-                    <>
-                      <Typography component="span" variant="body2" color="text.primary">
-                        {alert.alert_type} - Priority {alert.priority}
-                      </Typography>
-                      <br />
-                      {alert.source_ip} → {alert.destination_ip} ({alert.protocol})
-                    </>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
+          {loading ? (
+            <Typography>Loading...</Typography>
+          ) : error ? (
+            <Typography color="error">{error}</Typography>
+          ) : alerts.length === 0 ? (
+            <Typography>No alerts found.</Typography>
+          ) : (
+            <List>
+              {alerts.slice(0, 10).map((alert, index) => (
+                <ListItem key={index} divider>
+                  <ListItemText
+                    primary={alert.message}
+                    secondary={
+                      <>
+                        <Typography component="span" variant="body2" color="text.primary">
+                          {alert.alert_type} - Priority {alert.priority}
+                        </Typography>
+                        <br />
+                        {alert.source_ip} → {alert.destination_ip} ({alert.protocol})
+                      </>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          )}
         </Paper>
       </Grid>
     </Grid>

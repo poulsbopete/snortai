@@ -34,6 +34,28 @@ ELASTICSEARCH_INDEX=your_index_name
 uvicorn app.main:app --reload
 ```
 
+## Fresh Start: Recreate Python Environment
+
+If you want to start with a clean Python environment (recommended if you have dependency issues):
+
+```bash
+# Deactivate any active environment
+deactivate
+
+# Remove the old environment
+rm -rf venv
+
+# Create a new virtual environment
+python3 -m venv venv
+
+# Activate the new environment
+source venv/bin/activate
+
+# Upgrade pip and install dependencies
+pip install --upgrade pip
+pip install -r app/requirements.txt
+```
+
 ## Test Data Generation and Usage
 
 The application includes a test data generator that creates realistic Snort alerts, including various failure scenarios. This is useful for testing and development without needing a live Snort installation.

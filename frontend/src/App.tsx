@@ -2,6 +2,7 @@ import React from 'react';
 import { ThemeProvider, CssBaseline, Box, Container, Typography, AppBar, Toolbar } from '@mui/material';
 import { theme } from './theme';
 import AlertDashboard from './components/AlertDashboard';
+import AIAssistant from './components/AIAssistant';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <Box sx={{ flexGrow: 1 }}>
         <AppBar position="static" color="primary">
           <Toolbar>
+            <img src="/snort-logo.png" alt="Snort Logo" style={{ height: 40, marginRight: 16 }} />
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               SnortAI
             </Typography>
@@ -20,6 +22,7 @@ function App() {
             Snort Alert Analysis
           </Typography>
           <AlertDashboard />
+          <AIAssistant />
         </Container>
       </Box>
     </ThemeProvider>
