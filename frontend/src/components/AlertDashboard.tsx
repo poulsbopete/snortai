@@ -35,7 +35,11 @@ interface Alert {
   protocol: string;
 }
 
-const AlertDashboard: React.FC = () => {
+interface AlertDashboardProps {
+  onPrefill?: (question: string) => void;
+}
+
+const AlertDashboard: React.FC<AlertDashboardProps> = ({ onPrefill }) => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,8 +72,12 @@ const AlertDashboard: React.FC = () => {
       {
         label: 'Alert Priority',
         data: alerts.map(alert => alert.priority),
-        borderColor: theme.palette.primary.main,
-        backgroundColor: theme.palette.primary.main,
+        borderColor: theme.palette.secondary.main,
+        backgroundColor: theme.palette.secondary.light,
+        tension: 0.3,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 6,
       },
     ],
   };
@@ -82,7 +90,7 @@ const AlertDashboard: React.FC = () => {
         data: Array.from(new Set(alerts.map(alert => alert.alert_type))).map(
           type => alerts.filter(alert => alert.alert_type === type).length
         ),
-        backgroundColor: theme.palette.primary.main,
+        backgroundColor: theme.palette.secondary.main,
       },
     ],
   };
@@ -106,10 +114,16 @@ const AlertDashboard: React.FC = () => {
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  title: { display: false },
+                },
                 scales: {
                   y: {
                     beginAtZero: true,
-                    reverse: true,
+                  },
+                  x: {
+                    ticks: { maxTicksLimit: 5 },
                   },
                 },
               }}
@@ -134,6 +148,14 @@ const AlertDashboard: React.FC = () => {
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  title: { display: false },
+                },
+                scales: {
+                  y: { beginAtZero: true },
+                  x: { ticks: { maxTicksLimit: 5 } },
+                },
               }}
             />
           )}
@@ -152,8 +174,8 @@ const AlertDashboard: React.FC = () => {
             <Typography>No alerts found.</Typography>
           ) : (
             <List>
-              {alerts.slice(0, 10).map((alert, index) => (
-                <ListItem key={index} divider>
+              {alerts.slice(0, 5).map((alert, index) => (
+                <ListItem key={index} divider button onClick={() => onPrefill && onPrefill(`Explain this alert: ${alert.message}`)}>
                   <ListItemText
                     primary={alert.message}
                     secondary={

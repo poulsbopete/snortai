@@ -1,11 +1,12 @@
 # Force redeploy
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Body
 from fastapi.requests import Request
 import asyncio
 import json
 import logging
 from typing import List, Dict, Any
 import os
+import requests
 
 from mangum import Mangum
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,8 +16,8 @@ from snort.processor import SnortAlertProcessor
 from elastic.client import ElasticsearchClient
 from ai.analyzer import AlertAnalyzer
 from models.snort import SnortAlert, AlertAnalysis
-import openai
 from elasticsearch import Elasticsearch
+import openai
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -123,59 +124,130 @@ async def get_stats() -> Dict[str, Any]:
     """Get alert statistics from Elasticsearch"""
     return await elastic_client.get_alert_stats()
 
+# Helper: fields to extract from ES hits
+index_source_fields = {
+    settings.elasticsearch_index: [
+        "alert_type",
+        "alert_type.keyword",
+        "classification",
+        "classification.keyword",
+        "destination_ip",
+        "destination_ip.keyword",
+        "destination_port",
+        "message",
+        "message.keyword",
+        "priority",
+        "protocol",
+        "protocol.keyword",
+        "raw_alert",
+        "raw_alert.keyword",
+        "signature_id",
+        "signature_id.keyword",
+        "source_ip",
+        "source_ip.keyword",
+        "source_port",
+        "timestamp"
+    ]
+}
+
+def get_elasticsearch_results(query):
+    es_query = {
+        "query": {
+            "multi_match": {
+                "query": query,
+                "fields": [
+                    "alert_type",
+                    "classification",
+                    "message",
+                    "protocol",
+                    "raw_alert"
+                ]
+            }
+        },
+        "size": 3
+    }
+    es = Elasticsearch(settings.elasticsearch_url, api_key=settings.elasticsearch_api_key)
+    result = es.search(index=settings.elasticsearch_index, body=es_query)
+    return result["hits"]["hits"]
+
+def create_openai_prompt(results):
+    context = ""
+    context_map = {}
+    for idx, hit in enumerate(results, 1):
+        context += f"[{idx}]\n"
+        context_fields = index_source_fields.get(hit["_index"], index_source_fields[settings.elasticsearch_index])
+        snippet = ""
+        for source_field in context_fields:
+            hit_context = hit["_source"].get(source_field)
+            if hit_context:
+                snippet += f"{source_field}: {hit_context}\n"
+        context += snippet + "---\n"
+        context_map[str(idx)] = snippet.strip()
+    prompt = f"""
+Instructions:
+- You are a senior solutions architect at a cloud company. Provide concise, step-by-step technical answers. Prioritize production-safe recommendations. For YAML, JSON, or CLI, output only the relevant snippet. If the answer isn't certain, say so and suggest next steps. Tone: professional, approachable, slightly nerdy.
+- Answer questions truthfully and factually using only the context presented.
+- If you don't know the answer, just say that you don't know, don't make up an answer.
+- You must always cite the document where the answer was extracted using inline academic citation style [n], using the position number from the context below.
+- Use markdown format for code examples.
+- You are correct, factual, precise, and reliable.
+
+Context:
+{context}
+"""
+    return prompt, context_map
+
+def generate_openai_completion(user_prompt, question):
+    openai.api_key = settings.openai_api_key
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": user_prompt},
+            {"role": "user", "content": question},
+        ]
+    )
+    return response.choices[0].message.content
+
 @app.post("/api/ai-assistant")
 async def ai_assistant(request: Request):
     data = await request.json()
     question = data.get("question")
     logger.info(f"Received question: {question}")
 
-    # Search Elasticsearch for relevant alerts
+    try:
+        elasticsearch_results = get_elasticsearch_results(question)
+        context_prompt, context_map = create_openai_prompt(elasticsearch_results)
+        openai_completion = generate_openai_completion(context_prompt, question)
+        answer = openai_completion
+    except Exception as e:
+        logger.error(f"AI assistant error: {e}")
+        answer = "Sorry, I couldn't get an answer from the AI assistant."
+        context_map = {}
+
+    return {"answer": answer, "citations": context_map}
+
+@app.post("/api/semantic-search")
+async def semantic_search(payload: dict = Body(...)):
+    query = payload.get("query", "")
+    if not query:
+        return {"results": []}
     es = Elasticsearch(settings.elasticsearch_url, api_key=settings.elasticsearch_api_key)
-    es_query = {
+    body = {
+        "size": 5,
         "query": {
-            "multi_match": {
-                "query": question,
-                "fields": [
-                    "alert_type", "classification", "message", "protocol", "raw_alert"
-                ]
+            "text_expansion": {
+                "message.elser_model": {
+                    "model_id": ".elser_model_2_linux-x86_64",
+                    "model_text": query
+                }
             }
         },
-        "size": 3
+        "_source": ["alert_type", "message", "timestamp"]
     }
     try:
-        es_results = es.search(index=settings.elasticsearch_index, body=es_query)
-        hits = es_results["hits"]["hits"]
+        response = es.search(index=settings.elasticsearch_index, body=body)
+        results = [hit["_source"] for hit in response["hits"]["hits"]]
     except Exception as e:
-        logger.error(f"Elasticsearch error: {e}")
-        hits = []
-
-    # Build context from hits
-    context = ""
-    for hit in hits:
-        src = hit.get("_source", {})
-        context += "\n".join(f"{k}: {v}" for k, v in src.items() if v) + "\n---\n"
-
-    prompt = f"""
-You are a senior solutions architect at a cloud company. Provide concise, step-by-step technical answers. Prioritize production-safe recommendations. If the answer isn't certain, say so and suggest next steps. Tone: professional, approachable, slightly nerdy.
-Answer questions truthfully and factually using only the context presented.
-If you don't know the answer, just say that you don't know, don't make up an answer.
-Use markdown format for code examples.
-Context:
-{context}
-"""
-
-    # Call OpenAI
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": question}
-            ]
-        )
-        answer = response.choices[0].message.content
-    except Exception as e:
-        logger.error(f"OpenAI error: {e}")
-        answer = "Sorry, I couldn't get an answer from the AI."
-
-    return {"answer": answer} 
+        logger.error(f"ELSER search error: {e}")
+        results = []
+    return {"results": results} 

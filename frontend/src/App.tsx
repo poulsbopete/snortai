@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ThemeProvider, CssBaseline, Box, Container, Typography, AppBar, Toolbar } from '@mui/material';
 import { theme } from './theme';
 import AlertDashboard from './components/AlertDashboard';
-import AIAssistant from './components/AIAssistant';
+import SnortAI from './components/AIAssistant';
 
 function App() {
+  const [snortAIPrefill, setSnortAIPrefill] = useState<string | undefined>(undefined);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -21,8 +23,8 @@ function App() {
           <Typography variant="h4" component="h1" gutterBottom>
             Snort Alert Analysis
           </Typography>
-          <AlertDashboard />
-          <AIAssistant />
+          <AlertDashboard onPrefill={setSnortAIPrefill} />
+          <SnortAI prefill={snortAIPrefill} />
         </Container>
       </Box>
     </ThemeProvider>

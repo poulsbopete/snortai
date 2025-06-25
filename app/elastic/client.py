@@ -12,7 +12,7 @@ class ElasticsearchClient:
             settings.elasticsearch_url,
             api_key=settings.elasticsearch_api_key
         )
-        self.index_name = "snort_alerts"
+        self.index_name = settings.elasticsearch_index
         self._ensure_index()
 
     def _ensure_index(self):
