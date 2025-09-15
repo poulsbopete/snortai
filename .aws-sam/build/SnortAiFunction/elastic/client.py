@@ -8,6 +8,9 @@ logger = logging.getLogger(__name__)
 
 class ElasticsearchClient:
     def __init__(self):
+        if not settings.elasticsearch_url or not settings.elasticsearch_api_key:
+            raise ValueError("Elasticsearch URL and API key must be configured")
+        
         self.client = Elasticsearch(
             settings.elasticsearch_url,
             api_key=settings.elasticsearch_api_key

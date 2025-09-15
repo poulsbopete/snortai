@@ -2,8 +2,8 @@ import re
 from datetime import datetime
 from typing import Optional, List
 import logging
-from models.snort import SnortAlert
-from config import get_settings
+from app.models.snort import SnortAlert
+from app.config import get_settings
 import os
 
 settings = get_settings()
@@ -89,8 +89,24 @@ class SnortAlertProcessor:
         import time
 
         last_position = 0
+        file_missing_warning_shown = False
+        
         while True:
             try:
+                # Check if file exists before trying to open it
+                if not os.path.exists(settings.snort_alert_file):
+                    if not file_missing_warning_shown:
+                        logger.warning(f"Snort alert file not found: {settings.snort_alert_file}")
+                        logger.info("Creating a test alert file for demonstration purposes...")
+                        # Create a test alert file
+                        os.makedirs(os.path.dirname(settings.snort_alert_file), exist_ok=True)
+                        with open(settings.snort_alert_file, 'w') as test_file:
+                            test_file.write("01/27-10:00:00.000000  [**] [1:1000001:1] Test alert [**] [Classification: Test] [Priority: 1] {TCP} 192.168.1.1:1234 -> 192.168.1.2:80\n")
+                        logger.info(f"Created test alert file: {settings.snort_alert_file}")
+                        file_missing_warning_shown = True
+                    await asyncio.sleep(5)  # Wait longer when file is missing
+                    continue
+                
                 with open(settings.snort_alert_file, 'r') as f:
                     f.seek(last_position)
                     new_alerts = []

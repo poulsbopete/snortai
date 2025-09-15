@@ -13,8 +13,17 @@ settings = get_settings()
 
 def get_elasticsearch_client():
     """Create and return an Elasticsearch client."""
+    # Ensure we have a valid URL
+    es_url = settings.elasticsearch_url
+    if not es_url:
+        raise ValueError("Elasticsearch URL not configured")
+    
+    # Ensure URL has proper scheme
+    if not es_url.startswith(('http://', 'https://')):
+        es_url = f"https://{es_url}"
+    
     return Elasticsearch(
-        hosts=[settings.elasticsearch_url],
+        hosts=[es_url],
         api_key=settings.elasticsearch_api_key,
         verify_certs=True  # Enable SSL verification
     )

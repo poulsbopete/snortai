@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Grid, Paper, Typography, List, ListItem, ListItemText, Box } from '@mui/material';
+import { Grid, Paper, Typography, List, ListItem, ListItemText, Box, Chip, Alert } from '@mui/material';
 import { Line, Bar } from 'react-chartjs-2';
 import { theme } from '../theme';
+import SnortAI from './AIAssistant';
+import OneChatStatus from './OneChatStatus';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -37,9 +39,10 @@ interface Alert {
 
 interface AlertDashboardProps {
   onPrefill?: (question: string) => void;
+  prefill?: string;
 }
 
-const AlertDashboard: React.FC<AlertDashboardProps> = ({ onPrefill }) => {
+const AlertDashboard: React.FC<AlertDashboardProps> = ({ onPrefill, prefill }) => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +100,11 @@ const AlertDashboard: React.FC<AlertDashboardProps> = ({ onPrefill }) => {
 
   return (
     <Grid container spacing={3}>
+      {/* 1Chat Status */}
+      <Grid item xs={12}>
+        <OneChatStatus />
+      </Grid>
+      
       <Grid item xs={12} md={8}>
         <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 240 }}>
           <Typography component="h2" variant="h6" color="primary" gutterBottom>
@@ -161,8 +169,8 @@ const AlertDashboard: React.FC<AlertDashboardProps> = ({ onPrefill }) => {
           )}
         </Paper>
       </Grid>
-      <Grid item xs={12}>
-        <Paper sx={{ p: 2 }}>
+      <Grid item xs={12} md={6}>
+        <Paper sx={{ p: 2, height: '100%' }}>
           <Typography component="h2" variant="h6" color="primary" gutterBottom>
             Recent Alerts
           </Typography>
@@ -193,6 +201,11 @@ const AlertDashboard: React.FC<AlertDashboardProps> = ({ onPrefill }) => {
             </List>
           )}
         </Paper>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <Box sx={{ height: '100%' }}>
+          <SnortAI prefill={prefill} />
+        </Box>
       </Grid>
     </Grid>
   );

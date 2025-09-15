@@ -1,6 +1,6 @@
 import openai
-from config import get_settings
-from models.snort import SnortAlert, AlertAnalysis
+from app.config import get_settings
+from app.models.snort import SnortAlert, AlertAnalysis
 from typing import List, Dict, Any
 import logging
 
