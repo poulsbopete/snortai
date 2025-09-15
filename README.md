@@ -11,6 +11,8 @@ This application analyzes Snort alerts using AI to provide insights into why and
 - Historical trend analysis
 - Interactive CLI for discussing Snort issues with AI
 - Test data generation with realistic failure scenarios
+- **1Chat API endpoint discovery and testing**
+- **Agent Builder API integration**
 
 ## Setup
 
@@ -110,6 +112,54 @@ Example questions you can ask:
 
 The AI will analyze these alerts and provide insights into why Snort failed and how to address each issue.
 
+## 1Chat API Endpoint Discovery
+
+The project includes comprehensive endpoint discovery capabilities for testing 1Chat APIs and Agent Builder functionality.
+
+### Endpoint Discovery Script
+
+The `deep-chat-test.js` script provides comprehensive testing of 1Chat and Agent Builder APIs:
+
+```bash
+# Run endpoint discovery
+node deep-chat-test.js
+```
+
+### Features
+
+- **Comprehensive API Testing**: Tests multiple endpoint patterns and authentication methods
+- **Agent Builder Discovery**: Discovers available agents and tools
+- **Environment Variable Support**: Uses `.env` file for secure configuration
+- **Automatic URL Conversion**: Converts Elasticsearch URLs to Kibana URLs
+- **Detailed Response Analysis**: Provides insights into API structure and capabilities
+
+### Configuration
+
+The script reads configuration from environment variables:
+
+```bash
+# .env file
+ELASTICSEARCH_URL=https://your-cluster.es.region.aws.elastic.cloud:443
+ELASTICSEARCH_API_KEY=your_api_key_here
+```
+
+### Discovered Endpoints
+
+The script has discovered several working endpoints:
+
+- **`/api/agent_builder/agents` (GET)** - Lists available agents
+- **`/api/agent_builder/tools` (GET)** - Lists available tools  
+- **`/api/features` (GET)** - Lists available features
+- **`/api/status` (GET)** - System status information
+
+### Security
+
+- Environment variables are properly protected in `.gitignore`
+- API keys are not hardcoded in the script
+- Configuration validation shows which values are being used
+
+For detailed results, see `endpoint-discovery-results.md`.
+
 ## Project Structure
 
 - `app/`
@@ -122,6 +172,10 @@ The AI will analyze these alerts and provide insights into why Snort failed and 
   - `config.py` - Configuration management
   - `scripts/` - Utility scripts for test data generation
   - `cli/` - Command-line interface tools
+- `deep-chat-test.js` - 1Chat API endpoint discovery and testing script
+- `endpoint-discovery-results.md` - Detailed results of endpoint discovery
+- `.env` - Environment variables (not committed to Git)
+- `package.json` - Node.js dependencies for endpoint testing
 
 ## License
 
