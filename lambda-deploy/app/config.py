@@ -32,7 +32,7 @@ if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
 
 class Settings(BaseSettings):
     # Elasticsearch Configuration
-    elasticsearch_url: str = os.getenv("ELASTICSEARCH_URL", "")
+    elasticsearch_url: str = os.getenv("ELASTICSEARCH_URL", "https://ai-assistants-ffcafb.kb.us-east-1.aws.elastic.cloud")
     elasticsearch_api_key: str = os.getenv("ELASTICSEARCH_API_KEY", "")
     elasticsearch_index: str = os.getenv("ELASTICSEARCH_INDEX", "snort-alerts")
     

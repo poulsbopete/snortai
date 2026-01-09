@@ -43,11 +43,17 @@ class OneChatService:
     """Service for interacting with Elastic 1Chat API"""
     
     def __init__(self):
-        # Convert Elasticsearch URL to Kibana URL for 1Chat API
-        if '.es.' in settings.elasticsearch_url:
-            self.base_url = settings.elasticsearch_url.replace('.es.', '.kb.')
+        # Use the AI Assistants project endpoint
+        # Convert Elasticsearch URL to Kibana URL for 1Chat API if needed
+        if settings.elasticsearch_url and settings.elasticsearch_url.strip():
+            # If ELASTICSEARCH_URL is provided, convert .es. to .kb. for Kibana
+            if '.es.' in settings.elasticsearch_url:
+                self.base_url = settings.elasticsearch_url.replace('.es.', '.kb.')
+            else:
+                self.base_url = settings.elasticsearch_url
         else:
-            self.base_url = settings.elasticsearch_url
+            # Default to AI Assistants project endpoint
+            self.base_url = "https://ai-assistants-ffcafb.kb.us-east-1.aws.elastic.cloud"
         self.api_key = settings.elasticsearch_api_key
         self.headers = {
             'Authorization': f'ApiKey {self.api_key}',
