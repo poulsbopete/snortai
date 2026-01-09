@@ -1,0 +1,20 @@
+# Exclude files from Vercel deployment
+.aws-sam/
+.git/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+.env.local
+*.log
+node_modules/
+lambda-deploy/
+template.yaml
+samconfig.toml
+test_*.py
+create_snort_agent.py
+generate_test_alerts.py
+deep-chat-test.js
+endpoint-discovery-results.md
+response.json

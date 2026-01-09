@@ -17,6 +17,7 @@ def get_secret(secret_name, region_name="us-east-1"):
 load_dotenv()
 
 # Try to load secrets from AWS Secrets Manager if running in Lambda
+# For Vercel, use environment variables directly
 if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
     # Default secret name and region for us-east-1 and account 461485115270
     # Example ARN: arn:aws:secretsmanager:us-east-1:461485115270:secret:snortai/prod/api-keys-xxxxxx
@@ -29,6 +30,7 @@ if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
         os.environ["OPENAI_API_KEY"] = secrets.get("OPENAI_API_KEY", "")
     except Exception as e:
         print(f"Could not load secrets from AWS Secrets Manager: {e}")
+# Vercel will use environment variables set in the Vercel dashboard
 
 class Settings(BaseSettings):
     # Elasticsearch Configuration

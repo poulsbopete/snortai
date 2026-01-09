@@ -54,9 +54,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files for web interface
-app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
-app.mount("/templates", StaticFiles(directory="app/web/templates"), name="templates")
+# Mount static files for web interface (only if directories exist)
+import os
+if os.path.exists("app/web/static"):
+    app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
+if os.path.exists("app/web/templates"):
+    app.mount("/templates", StaticFiles(directory="app/web/templates"), name="templates")
 
 settings = get_settings()
 
