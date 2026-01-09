@@ -14,10 +14,10 @@ if parent_dir not in sys.path:
 from app.main import app
 from mangum import Mangum
 
-# Create the handler for Vercel
-# Vercel uses AWS Lambda-compatible events
-handler = Mangum(app, lifespan="off")
+# Create the Mangum handler for FastAPI
+mangum_handler = Mangum(app, lifespan="off")
 
-def lambda_handler(event, context):
+# Vercel Python functions expect a handler function
+def handler(event, context):
     """Vercel-compatible handler (uses Lambda event format)"""
-    return handler(event, context)
+    return mangum_handler(event, context)
