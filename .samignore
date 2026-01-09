@@ -1,0 +1,21 @@
+# Exclude large directories and files that aren't needed for Lambda
+node_modules/
+venv/
+.aws-sam/
+.git/
+frontend/
+*.log
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+.env
+*.md
+*.txt
+!requirements.txt
+deep-chat-test.js
+endpoint-discovery-results.md
+test_*.py
+*.json
+!template.yaml
+!samconfig.toml

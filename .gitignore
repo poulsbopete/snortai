@@ -47,5 +47,9 @@ coverage.xml
 # Pytest
 .pytest_cache/
 
+# AWS SAM
+.aws-sam/
+
 # Other
 *.swp 
+node_modules

@@ -1,0 +1,128 @@
+/* Custom styles for SnortAI */
+
+/* Alert card animations */
+.alert-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.alert-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Confidence bar styling */
+.confidence-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.confidence-bar-fill {
+    height: 100%;
+    background-color: #3b82f6;
+    transition: width 0.3s ease-in-out;
+}
+
+/* Modal animations */
+#alertModal {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#alertModal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Custom scrollbar for alerts list */
+#alertsList {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+#alertsList::-webkit-scrollbar {
+    width: 8px;
+}
+
+#alertsList::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+#alertsList::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}
+
+/* Priority colors */
+.priority-1 {
+    color: #ef4444;
+}
+
+.priority-2 {
+    color: #f59e0b;
+}
+
+.priority-3 {
+    color: #3b82f6;
+}
+
+/* Loading animation */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #3b82f6;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .grid-cols-1 {
+        grid-template-columns: 1fr;
+    }
+    
+    .max-w-2xl {
+        max-width: 100%;
+        margin: 0 1rem;
+    }
+}
+
+.alert-list {
+    max-height: 600px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.alert-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.alert-list::-webkit-scrollbar-track {
+    background: #f7fafc;
+}
+
+.alert-list::-webkit-scrollbar-thumb {
+    background-color: #cbd5e0;
+    border-radius: 4px;
+}
+
+.modal-overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+} 
