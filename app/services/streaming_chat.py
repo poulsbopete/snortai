@@ -1,5 +1,5 @@
 """
-Streaming Chat Service for Elastic 1Chat
+Streaming Chat Service for Elastic MCP Server
 Provides real-time streaming responses to improve user experience
 """
 
@@ -28,7 +28,7 @@ class StreamingChatService:
                 "conversation_id": conversation_id
             }
             
-            # Get response from 1Chat
+            # Get response from MCP server
             response = self.onechat_service.chat(
                 input_text=input_text,
                 conversation_id=conversation_id,

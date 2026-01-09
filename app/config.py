@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     openai_temperature: float = float(os.getenv("OPENAI_TEMPERATURE", "0.1"))
     
     # AI Backend Configuration
-    ai_backend: str = os.getenv("AI_BACKEND", "openai")  # "openai" or "onechat"
+    ai_backend: str = os.getenv("AI_BACKEND", "openai")  # "openai" or "onechat" (MCP server)
     ai_backend_fallback: bool = os.getenv("AI_BACKEND_FALLBACK", "true").lower() == "true"
     
     # Snort Configuration

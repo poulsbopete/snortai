@@ -1,6 +1,6 @@
 """
-Elastic 1Chat API Service
-Provides integration with Elastic's 1Chat API for conversational AI
+Elastic MCP Server Service
+Provides integration with Elastic's MCP (Model Context Protocol) server endpoint for conversational AI
 """
 
 import requests
@@ -25,7 +25,7 @@ class ChatMessage:
 
 @dataclass
 class ChatResponse:
-    """Response from 1Chat API"""
+    """Response from MCP server API"""
     message: str
     conversation_id: str
     agent_id: Optional[str] = None
@@ -33,18 +33,18 @@ class ChatResponse:
 
 @dataclass
 class Agent:
-    """Represents a 1Chat agent"""
+    """Represents an MCP server agent"""
     id: str
     name: str
     description: str
     configuration: Dict[str, Any]
 
 class OneChatService:
-    """Service for interacting with Elastic 1Chat API"""
+    """Service for interacting with Elastic MCP server endpoint"""
     
     def __init__(self):
-        # Use the AI Assistants project endpoint
-        # Convert Elasticsearch URL to Kibana URL for 1Chat API if needed
+        # Use the AI Assistants project MCP server endpoint
+        # Convert Elasticsearch URL to Kibana URL for MCP API if needed
         if settings.elasticsearch_url and settings.elasticsearch_url.strip():
             # If ELASTICSEARCH_URL is provided, convert .es. to .kb. for Kibana
             if '.es.' in settings.elasticsearch_url:
@@ -112,7 +112,7 @@ class OneChatService:
         self._last_failure_time = time.time()
     
     def _make_request(self, method: str, endpoint: str, data: Optional[Dict] = None, timeout: int = 30) -> Dict[str, Any]:
-        """Make a request to the 1Chat API with timeout and circuit breaker"""
+        """Make a request to the MCP server API with timeout and circuit breaker"""
         # Check circuit breaker
         if self._is_circuit_breaker_open():
             raise Exception("Service temporarily unavailable (circuit breaker open)")
@@ -132,13 +132,13 @@ class OneChatService:
             return response.json()
             
         except requests.exceptions.Timeout:
-            logger.error(f"1Chat API request timed out after {timeout} seconds")
+            logger.error(f"MCP server API request timed out after {timeout} seconds")
             self._record_failure()
             raise Exception(f"Request timed out after {timeout} seconds")
         except requests.exceptions.RequestException as e:
-            logger.error(f"1Chat API request failed: {e}")
+            logger.error(f"MCP server API request failed: {e}")
             self._record_failure()
-            raise Exception(f"Failed to communicate with 1Chat API: {str(e)}")
+            raise Exception(f"Failed to communicate with MCP server API: {str(e)}")
     
     def get_agents(self) -> List[Agent]:
         """Get list of all available agents with caching"""
@@ -264,7 +264,7 @@ class OneChatService:
     def chat(self, input_text: str, conversation_id: Optional[str] = None, 
              agent_id: Optional[str] = None, connector_id: Optional[str] = None, 
              timeout: int = 60, use_cache: bool = True) -> ChatResponse:
-        """Send a message to 1Chat and get response with caching"""
+        """Send a message to MCP server and get response with caching"""
         
         # Prevent using the deprecated "default" agent name
         if agent_id and agent_id.lower() == "default":
@@ -337,7 +337,7 @@ class OneChatService:
             return chat_response
             
         except Exception as e:
-            logger.error(f"Failed to chat with 1Chat: {e}")
+            logger.error(f"Failed to chat with MCP server: {e}")
             # Return a fallback response instead of raising an exception
             return ChatResponse(
                 message=f"I'm experiencing some technical difficulties with the AI service. Please try again in a moment. Error: {str(e)}",
@@ -411,5 +411,5 @@ class OneChatService:
 try:
     onechat_service = OneChatService()
 except ValueError as e:
-    logger.warning(f"OneChat service not available: {e}")
+    logger.warning(f"MCP server service not available: {e}")
     onechat_service = None

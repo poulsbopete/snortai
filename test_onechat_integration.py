@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Test script for Elastic 1Chat integration
-Demonstrates the complete functionality of the 1Chat service
+Test script for Elastic MCP server integration
+Demonstrates the complete functionality of the MCP server service
 """
 
 import sys
@@ -11,9 +11,9 @@ sys.path.append('/opt/snortai')
 from app.services.onechat import onechat_service
 
 def test_onechat_integration():
-    """Test all 1Chat functionality"""
+    """Test all MCP server functionality"""
     
-    print("🚀 Testing Elastic 1Chat Integration")
+    print("🚀 Testing Elastic MCP Server Integration")
     print("=" * 60)
     
     # Test 1: Get available agents
@@ -98,7 +98,7 @@ def test_onechat_integration():
     try:
         # Don't specify agent_id - let the system use its default
         default_response = onechat_service.chat(
-            input_text="Hello, can you help me understand what 1Chat can do?"
+            input_text="Hello, can you help me understand what the MCP server can do?"
             # No agent_id specified - will use system default
         )
         print(f"✅ Chat without agent ID successful!")
@@ -110,7 +110,7 @@ def test_onechat_integration():
         return False
     
     print("\n" + "=" * 60)
-    print("🎉 All tests passed! 1Chat integration is working perfectly!")
+    print("🎉 All tests passed! MCP server integration is working perfectly!")
     print("=" * 60)
     
     return True
@@ -146,7 +146,7 @@ def demo_snort_analysis():
             print(f"❌ Query failed: {e}")
 
 if __name__ == "__main__":
-    print("Starting 1Chat Integration Tests...")
+    print("Starting MCP Server Integration Tests...")
     
     # Run basic integration tests
     if test_onechat_integration():

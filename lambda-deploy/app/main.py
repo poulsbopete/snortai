@@ -254,20 +254,20 @@ async def semantic_search(payload: dict = Body(...)):
         results = []
     return {"results": results}
 
-# 1Chat API Endpoints
+# MCP Server API Endpoints
 @app.get("/api/onechat/agents")
 async def get_onechat_agents():
-    """Get list of all 1Chat agents"""
+    """Get list of all MCP server agents"""
     try:
         agents = onechat_service.get_agents()
         return {"agents": [{"id": agent.id, "name": agent.name, "description": agent.description} for agent in agents]}
     except Exception as e:
-        logger.error(f"Failed to get 1Chat agents: {e}")
+        logger.error(f"Failed to get MCP server agents: {e}")
         return {"error": "Failed to get agents", "agents": []}
 
 @app.get("/api/onechat/agents/{agent_id}")
 async def get_onechat_agent(agent_id: str):
-    """Get information about a specific 1Chat agent"""
+    """Get information about a specific MCP server agent"""
     try:
         agent = onechat_service.get_agent(agent_id)
         if agent:
@@ -275,7 +275,7 @@ async def get_onechat_agent(agent_id: str):
         else:
             return {"error": "Agent not found"}
     except Exception as e:
-        logger.error(f"Failed to get 1Chat agent {agent_id}: {e}")
+        logger.error(f"Failed to get MCP server agent {agent_id}: {e}")
         return {"error": "Failed to get agent"}
 
 @app.get("/api/onechat/cache/stats")
@@ -386,7 +386,7 @@ async def clear_all_expired_caches():
 
 @app.post("/api/onechat/agents")
 async def create_onechat_agent(request: Request):
-    """Create a new 1Chat agent"""
+    """Create a new MCP server agent"""
     try:
         data = await request.json()
         success = onechat_service.create_agent(
@@ -401,12 +401,12 @@ async def create_onechat_agent(request: Request):
         else:
             return {"error": "Failed to create agent"}
     except Exception as e:
-        logger.error(f"Failed to create 1Chat agent: {e}")
+        logger.error(f"Failed to create MCP server agent: {e}")
         return {"error": "Failed to create agent"}
 
 @app.post("/api/onechat/converse")
 async def converse_with_onechat(request: Request):
-    """Send a message to 1Chat and get response"""
+    """Send a message to MCP server and get response"""
     try:
         data = await request.json()
         input_text = data.get("input", "")
@@ -432,8 +432,8 @@ async def converse_with_onechat(request: Request):
         }
         
     except Exception as e:
-        logger.error(f"Failed to converse with 1Chat: {e}")
-        return {"error": "Failed to get response from 1Chat"}
+        logger.error(f"Failed to converse with MCP server: {e}")
+        return {"error": "Failed to get response from MCP server"}
 
 @app.get("/api/onechat/conversations")
 async def get_onechat_conversations():
@@ -442,7 +442,7 @@ async def get_onechat_conversations():
         conversations = onechat_service.get_conversations()
         return {"conversations": conversations}
     except Exception as e:
-        logger.error(f"Failed to get 1Chat conversations: {e}")
+        logger.error(f"Failed to get MCP server conversations: {e}")
         return {"error": "Failed to get conversations", "conversations": []}
 
 @app.get("/api/onechat/conversations/{conversation_id}")
@@ -455,22 +455,22 @@ async def get_onechat_conversation(conversation_id: str):
         else:
             return {"error": "Conversation not found"}
     except Exception as e:
-        logger.error(f"Failed to get 1Chat conversation {conversation_id}: {e}")
+        logger.error(f"Failed to get MCP server conversation {conversation_id}: {e}")
         return {"error": "Failed to get conversation"}
 
 @app.get("/api/onechat/tools")
 async def get_onechat_tools():
-    """Get list of available 1Chat tools"""
+    """Get list of available MCP server tools"""
     try:
         tools = onechat_service.get_tools()
         return {"tools": tools}
     except Exception as e:
-        logger.error(f"Failed to get 1Chat tools: {e}")
+        logger.error(f"Failed to get MCP server tools: {e}")
         return {"error": "Failed to get tools", "tools": []}
 
 @app.get("/api/onechat/status")
 async def get_onechat_status():
-    """Get 1Chat service status and health information"""
+    """Get MCP server service status and health information"""
     try:
         # Test basic connectivity without making expensive chat requests
         agents = onechat_service.get_agents()
@@ -489,7 +489,7 @@ async def get_onechat_status():
         return status_info
         
     except Exception as e:
-        logger.error(f"1Chat status check failed: {e}")
+        logger.error(f"MCP server status check failed: {e}")
         return {
             "status": "unhealthy",
             "error": str(e),

@@ -46,9 +46,9 @@ class AIBackendManager:
             logger.warning("OpenAI service not available")
             
         if self.onechat_service:
-            logger.info("OneChat service available")
+            logger.info("MCP server service available")
         else:
-            logger.warning("OneChat service not available")
+            logger.warning("MCP server service not available")
     
     def _get_primary_service(self):
         """Get the primary AI service based on current backend setting"""
@@ -95,7 +95,7 @@ class AIBackendManager:
                 error_message="Service not initialized"
             )
         
-        # Check OneChat status
+        # Check MCP server status
         if self.onechat_service:
             try:
                 # Quick test to see if service is responsive
@@ -103,19 +103,19 @@ class AIBackendManager:
                 start_time = time.time()
                 # Just check if we can access the service (don't make actual API call)
                 status["onechat"] = BackendStatus(
-                    name="OneChat",
+                    name="MCP Server",
                     available=True,
                     response_time_ms=None
                 )
             except Exception as e:
                 status["onechat"] = BackendStatus(
-                    name="OneChat",
+                    name="MCP Server",
                     available=False,
                     error_message=str(e)
                 )
         else:
             status["onechat"] = BackendStatus(
-                name="OneChat",
+                name="MCP Server",
                 available=False,
                 error_message="Service not initialized"
             )
@@ -133,7 +133,7 @@ class AIBackendManager:
             return False
         
         if backend_name == "onechat" and not self.onechat_service:
-            logger.error("OneChat service not available")
+            logger.error("MCP server service not available")
             return False
         
         self.current_backend = backend_name
@@ -233,7 +233,7 @@ class AIBackendManager:
             try:
                 self.onechat_service.clear_cache()
             except Exception as e:
-                logger.error(f"Failed to clear OneChat cache: {e}")
+                logger.error(f"Failed to clear MCP server cache: {e}")
     
     def clear_expired_caches(self):
         """Clear expired caches from all backends"""
@@ -247,7 +247,7 @@ class AIBackendManager:
             try:
                 self.onechat_service.clear_expired_cache()
             except Exception as e:
-                logger.error(f"Failed to clear expired OneChat cache: {e}")
+                logger.error(f"Failed to clear expired MCP server cache: {e}")
 
 # Create a global instance
 ai_backend_manager = AIBackendManager()
