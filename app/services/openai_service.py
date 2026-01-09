@@ -66,7 +66,8 @@ class OpenAIService:
         """Generate a cache key for the request"""
         # Normalize the input text for better cache hits
         normalized_input = input_text.strip().lower()
-        cache_string = f"{normalized_input}:{agent_id or 'default'}"
+        # Use 'none' instead of 'default' to avoid confusion with old agent name
+        cache_string = f"{normalized_input}:{agent_id or 'none'}"
         return hashlib.md5(cache_string.encode()).hexdigest()
     
     def _get_cached_response(self, cache_key: str) -> Optional[ChatResponse]:

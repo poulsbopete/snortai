@@ -212,7 +212,8 @@ class OneChatService:
         import hashlib
         # Normalize the input text for better cache hits
         normalized_input = input_text.strip().lower()
-        cache_string = f"{normalized_input}:{agent_id or 'default'}"
+        # Use 'none' instead of 'default' to avoid confusion with old agent name
+        cache_string = f"{normalized_input}:{agent_id or 'none'}"
         return hashlib.md5(cache_string.encode()).hexdigest()
     
     def _get_cached_response(self, cache_key: str) -> Optional[ChatResponse]:
@@ -258,6 +259,11 @@ class OneChatService:
              agent_id: Optional[str] = None, connector_id: Optional[str] = None, 
              timeout: int = 60, use_cache: bool = True) -> ChatResponse:
         """Send a message to 1Chat and get response with caching"""
+        
+        # Prevent using the deprecated "default" agent name
+        if agent_id and agent_id.lower() == "default":
+            logger.warning("Deprecated 'default' agent name detected. Removing agent_id from request.")
+            agent_id = None
         
         # Clean up expired cache entries periodically
         if len(self._response_cache) > 100:  # Cleanup when cache gets large

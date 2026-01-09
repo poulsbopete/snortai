@@ -92,20 +92,21 @@ def test_onechat_integration():
         print(f"❌ Failed to get conversations: {e}")
         return False
     
-    # Test 6: Chat with default agent
-    print("\n6️⃣ Testing Default Agent")
+    # Test 6: Chat without specifying agent (uses system default)
+    print("\n6️⃣ Testing Chat Without Agent ID")
     print("-" * 30)
     try:
+        # Don't specify agent_id - let the system use its default
         default_response = onechat_service.chat(
-            input_text="Hello, can you help me understand what 1Chat can do?",
-            agent_id="default"
+            input_text="Hello, can you help me understand what 1Chat can do?"
+            # No agent_id specified - will use system default
         )
-        print(f"✅ Default agent chat successful!")
+        print(f"✅ Chat without agent ID successful!")
         print(f"   Response length: {len(default_response.message)} characters")
         print(f"   Response preview:")
         print(f"   {default_response.message[:200]}...")
     except Exception as e:
-        print(f"❌ Default agent chat failed: {e}")
+        print(f"❌ Chat without agent ID failed: {e}")
         return False
     
     print("\n" + "=" * 60)
