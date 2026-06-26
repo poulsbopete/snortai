@@ -53,3 +53,5 @@ coverage.xml
 # Other
 *.swp 
 node_modules
+.next/
+.env.vercel.elastic
