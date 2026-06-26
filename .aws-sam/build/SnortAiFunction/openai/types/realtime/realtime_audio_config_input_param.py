@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Optional
 from typing_extensions import TypedDict
 
 from .noise_reduction_type import NoiseReductionType
@@ -13,6 +14,13 @@ __all__ = ["RealtimeAudioConfigInputParam", "NoiseReduction"]
 
 
 class NoiseReduction(TypedDict, total=False):
+    """Configuration for input audio noise reduction.
+
+    This can be set to `null` to turn off.
+    Noise reduction filters audio added to the input audio buffer before it is sent to VAD and the model.
+    Filtering the audio can improve VAD and turn detection accuracy (reducing false positives) and model performance by improving perception of the input audio.
+    """
+
     type: NoiseReductionType
     """Type of noise reduction.
 
@@ -46,12 +54,15 @@ class RealtimeAudioConfigInputParam(TypedDict, total=False):
     transcription, these offer additional guidance to the transcription service.
     """
 
-    turn_detection: RealtimeAudioInputTurnDetectionParam
+    turn_detection: Optional[RealtimeAudioInputTurnDetectionParam]
     """Configuration for turn detection, ether Server VAD or Semantic VAD.
 
     This can be set to `null` to turn off, in which case the client must manually
-    trigger model response. Server VAD means that the model will detect the start
-    and end of speech based on audio volume and respond at the end of user speech.
+    trigger model response.
+
+    Server VAD means that the model will detect the start and end of speech based on
+    audio volume and respond at the end of user speech.
+
     Semantic VAD is more advanced and uses a turn detection model (in conjunction
     with VAD) to semantically estimate whether the user has finished speaking, then
     dynamically sets a timeout based on this probability. For example, if user audio

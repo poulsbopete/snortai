@@ -1,9 +1,26 @@
-import typing
+from collections.abc import Awaitable, Mapping, MutableMapping
+from contextlib import AbstractAsyncContextManager
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
-Scope = typing.MutableMapping[str, typing.Any]
-Message = typing.MutableMapping[str, typing.Any]
+if TYPE_CHECKING:
+    from starlette.requests import Request
+    from starlette.responses import Response
+    from starlette.websockets import WebSocket
 
-Receive = typing.Callable[[], typing.Awaitable[Message]]
-Send = typing.Callable[[Message], typing.Awaitable[None]]
+AppType = TypeVar("AppType")
 
-ASGIApp = typing.Callable[[Scope, Receive, Send], typing.Awaitable[None]]
+Scope = MutableMapping[str, Any]
+Message = MutableMapping[str, Any]
+
+Receive = Callable[[], Awaitable[Message]]
+Send = Callable[[Message], Awaitable[None]]
+
+ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
+
+StatelessLifespan = Callable[[AppType], AbstractAsyncContextManager[None]]
+StatefulLifespan = Callable[[AppType], AbstractAsyncContextManager[Mapping[str, Any]]]
+Lifespan = Union[StatelessLifespan[AppType], StatefulLifespan[AppType]]
+
+HTTPExceptionHandler = Callable[["Request", Exception], "Response | Awaitable[Response]"]
+WebSocketExceptionHandler = Callable[["WebSocket", Exception], Awaitable[None]]
+ExceptionHandler = Union[HTTPExceptionHandler, WebSocketExceptionHandler]

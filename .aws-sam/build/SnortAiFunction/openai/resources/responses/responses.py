@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import copy
 from typing import Any, List, Type, Union, Iterable, Optional, cast
 from functools import partial
 from typing_extensions import Literal, overload
@@ -9,7 +10,7 @@ from typing_extensions import Literal, overload
 import httpx
 
 from ... import _legacy_response
-from ..._types import NOT_GIVEN, Body, Query, Headers, NoneType, NotGiven
+from ..._types import NOT_GIVEN, Body, Omit, Query, Headers, NoneType, NotGiven, omit, not_given
 from ..._utils import is_given, maybe_transform, async_maybe_transform
 from ..._compat import cached_property
 from ..._resource import SyncAPIResource, AsyncAPIResource
@@ -24,8 +25,20 @@ from .input_items import (
 )
 from ..._streaming import Stream, AsyncStream
 from ...lib._tools import PydanticFunctionTool, ResponsesPydanticFunctionTool
+from .input_tokens import (
+    InputTokens,
+    AsyncInputTokens,
+    InputTokensWithRawResponse,
+    AsyncInputTokensWithRawResponse,
+    InputTokensWithStreamingResponse,
+    AsyncInputTokensWithStreamingResponse,
+)
 from ..._base_client import make_request_options
-from ...types.responses import response_create_params, response_retrieve_params
+from ...types.responses import (
+    response_create_params,
+    response_compact_params,
+    response_retrieve_params,
+)
 from ...lib._parsing._responses import (
     TextFormatT,
     parse_response,
@@ -37,11 +50,13 @@ from ...types.shared_params.metadata import Metadata
 from ...types.shared_params.reasoning import Reasoning
 from ...types.responses.parsed_response import ParsedResponse
 from ...lib.streaming.responses._responses import ResponseStreamManager, AsyncResponseStreamManager
+from ...types.responses.compacted_response import CompactedResponse
 from ...types.responses.response_includable import ResponseIncludable
 from ...types.shared_params.responses_model import ResponsesModel
 from ...types.responses.response_input_param import ResponseInputParam
 from ...types.responses.response_prompt_param import ResponsePromptParam
 from ...types.responses.response_stream_event import ResponseStreamEvent
+from ...types.responses.response_input_item_param import ResponseInputItemParam
 from ...types.responses.response_text_config_param import ResponseTextConfigParam
 
 __all__ = ["Responses", "AsyncResponses"]
@@ -51,6 +66,10 @@ class Responses(SyncAPIResource):
     @cached_property
     def input_items(self) -> InputItems:
         return InputItems(self._client)
+
+    @cached_property
+    def input_tokens(self) -> InputTokens:
+        return InputTokens(self._client)
 
     @cached_property
     def with_raw_response(self) -> ResponsesWithRawResponse:
@@ -75,39 +94,40 @@ class Responses(SyncAPIResource):
     def create(
         self,
         *,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream: Optional[Literal[False]] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream: Optional[Literal[False]] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response:
         """Creates a model response.
 
@@ -203,6 +223,11 @@ class Responses(SyncAPIResource):
               hit rates. Replaces the `user` field.
               [Learn more](https://platform.openai.com/docs/guides/prompt-caching).
 
+          prompt_cache_retention: The retention policy for the prompt cache. Set to `24h` to enable extended
+              prompt caching, which keeps cached prefixes active for longer, up to a maximum
+              of 24 hours.
+              [Learn more](https://platform.openai.com/docs/guides/prompt-caching#prompt-cache-retention).
+
           reasoning: **gpt-5 and o-series models only**
 
               Configuration options for
@@ -288,10 +313,10 @@ class Responses(SyncAPIResource):
 
           truncation: The truncation strategy to use for the model response.
 
-              - `auto`: If the context of this response and previous ones exceeds the model's
-                context window size, the model will truncate the response to fit the context
-                window by dropping input items in the middle of the conversation.
-              - `disabled` (default): If a model response will exceed the context window size
+              - `auto`: If the input to this Response exceeds the model's context window size,
+                the model will truncate the response to fit the context window by dropping
+                items from the beginning of the conversation.
+              - `disabled` (default): If the input size will exceed the context window size
                 for a model, the request will fail with a 400 error.
 
           user: This field is being replaced by `safety_identifier` and `prompt_cache_key`. Use
@@ -315,38 +340,39 @@ class Responses(SyncAPIResource):
         self,
         *,
         stream: Literal[True],
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Stream[ResponseStreamEvent]:
         """Creates a model response.
 
@@ -449,6 +475,11 @@ class Responses(SyncAPIResource):
               hit rates. Replaces the `user` field.
               [Learn more](https://platform.openai.com/docs/guides/prompt-caching).
 
+          prompt_cache_retention: The retention policy for the prompt cache. Set to `24h` to enable extended
+              prompt caching, which keeps cached prefixes active for longer, up to a maximum
+              of 24 hours.
+              [Learn more](https://platform.openai.com/docs/guides/prompt-caching#prompt-cache-retention).
+
           reasoning: **gpt-5 and o-series models only**
 
               Configuration options for
@@ -527,10 +558,10 @@ class Responses(SyncAPIResource):
 
           truncation: The truncation strategy to use for the model response.
 
-              - `auto`: If the context of this response and previous ones exceeds the model's
-                context window size, the model will truncate the response to fit the context
-                window by dropping input items in the middle of the conversation.
-              - `disabled` (default): If a model response will exceed the context window size
+              - `auto`: If the input to this Response exceeds the model's context window size,
+                the model will truncate the response to fit the context window by dropping
+                items from the beginning of the conversation.
+              - `disabled` (default): If the input size will exceed the context window size
                 for a model, the request will fail with a 400 error.
 
           user: This field is being replaced by `safety_identifier` and `prompt_cache_key`. Use
@@ -554,38 +585,39 @@ class Responses(SyncAPIResource):
         self,
         *,
         stream: bool,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response | Stream[ResponseStreamEvent]:
         """Creates a model response.
 
@@ -688,6 +720,11 @@ class Responses(SyncAPIResource):
               hit rates. Replaces the `user` field.
               [Learn more](https://platform.openai.com/docs/guides/prompt-caching).
 
+          prompt_cache_retention: The retention policy for the prompt cache. Set to `24h` to enable extended
+              prompt caching, which keeps cached prefixes active for longer, up to a maximum
+              of 24 hours.
+              [Learn more](https://platform.openai.com/docs/guides/prompt-caching#prompt-cache-retention).
+
           reasoning: **gpt-5 and o-series models only**
 
               Configuration options for
@@ -766,10 +803,10 @@ class Responses(SyncAPIResource):
 
           truncation: The truncation strategy to use for the model response.
 
-              - `auto`: If the context of this response and previous ones exceeds the model's
-                context window size, the model will truncate the response to fit the context
-                window by dropping input items in the middle of the conversation.
-              - `disabled` (default): If a model response will exceed the context window size
+              - `auto`: If the input to this Response exceeds the model's context window size,
+                the model will truncate the response to fit the context window by dropping
+                items from the beginning of the conversation.
+              - `disabled` (default): If the input size will exceed the context window size
                 for a model, the request will fail with a 400 error.
 
           user: This field is being replaced by `safety_identifier` and `prompt_cache_key`. Use
@@ -791,39 +828,40 @@ class Responses(SyncAPIResource):
     def create(
         self,
         *,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream: Optional[Literal[False]] | Literal[True] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream: Optional[Literal[False]] | Literal[True] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response | Stream[ResponseStreamEvent]:
         return self._post(
             "/responses",
@@ -842,6 +880,7 @@ class Responses(SyncAPIResource):
                     "previous_response_id": previous_response_id,
                     "prompt": prompt,
                     "prompt_cache_key": prompt_cache_key,
+                    "prompt_cache_retention": prompt_cache_retention,
                     "reasoning": reasoning,
                     "safety_identifier": safety_identifier,
                     "service_tier": service_tier,
@@ -874,9 +913,9 @@ class Responses(SyncAPIResource):
         self,
         *,
         response_id: str,
-        text_format: type[TextFormatT] | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
-        tools: Iterable[ParseableToolParam] | NotGiven = NOT_GIVEN,
+        text_format: type[TextFormatT] | Omit = omit,
+        starting_after: int | Omit = omit,
+        tools: Iterable[ParseableToolParam] | Omit = omit,
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
@@ -890,31 +929,32 @@ class Responses(SyncAPIResource):
         *,
         input: Union[str, ResponseInputParam],
         model: ResponsesModel,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        text_format: type[TextFormatT] | NotGiven = NOT_GIVEN,
-        tools: Iterable[ParseableToolParam] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        text_format: type[TextFormatT] | Omit = omit,
+        tools: Iterable[ParseableToolParam] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -926,35 +966,36 @@ class Responses(SyncAPIResource):
     def stream(
         self,
         *,
-        response_id: str | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        text_format: type[TextFormatT] | NotGiven = NOT_GIVEN,
-        tools: Iterable[ParseableToolParam] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        response_id: str | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        background: Optional[bool] | Omit = omit,
+        text_format: type[TextFormatT] | Omit = omit,
+        tools: Iterable[ParseableToolParam] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -975,6 +1016,7 @@ class Responses(SyncAPIResource):
             "previous_response_id": previous_response_id,
             "prompt": prompt,
             "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": prompt_cache_retention,
             "reasoning": reasoning,
             "safety_identifier": safety_identifier,
             "service_tier": service_tier,
@@ -1011,6 +1053,7 @@ class Responses(SyncAPIResource):
                 if "format" in text:
                     raise TypeError("Cannot mix and match text.format with text_format")
 
+                text = copy(text)
                 text["format"] = _type_to_text_format_param(text_format)
 
             api_request: partial[Stream[ResponseStreamEvent]] = partial(
@@ -1028,6 +1071,7 @@ class Responses(SyncAPIResource):
                 previous_response_id=previous_response_id,
                 prompt=prompt,
                 prompt_cache_key=prompt_cache_key,
+                prompt_cache_retention=prompt_cache_retention,
                 store=store,
                 stream_options=stream_options,
                 stream=True,
@@ -1061,7 +1105,7 @@ class Responses(SyncAPIResource):
                     extra_headers=extra_headers,
                     extra_query=extra_query,
                     extra_body=extra_body,
-                    starting_after=NOT_GIVEN,
+                    starting_after=omit,
                     timeout=timeout,
                 ),
                 text_format=text_format,
@@ -1072,35 +1116,36 @@ class Responses(SyncAPIResource):
     def parse(
         self,
         *,
-        text_format: type[TextFormatT] | NotGiven = NOT_GIVEN,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream: Optional[Literal[False]] | Literal[True] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ParseableToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
-        verbosity: Optional[Literal["low", "medium", "high"]] | NotGiven = NOT_GIVEN,
+        text_format: type[TextFormatT] | Omit = omit,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream: Optional[Literal[False]] | Literal[True] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ParseableToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
+        verbosity: Optional[Literal["low", "medium", "high"]] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1114,7 +1159,7 @@ class Responses(SyncAPIResource):
 
             if "format" in text:
                 raise TypeError("Cannot mix and match text.format with text_format")
-
+            text = copy(text)
             text["format"] = _type_to_text_format_param(text_format)
 
         tools = _make_tools(tools)
@@ -1143,6 +1188,7 @@ class Responses(SyncAPIResource):
                     "previous_response_id": previous_response_id,
                     "prompt": prompt,
                     "prompt_cache_key": prompt_cache_key,
+                    "prompt_cache_retention": prompt_cache_retention,
                     "reasoning": reasoning,
                     "safety_identifier": safety_identifier,
                     "service_tier": service_tier,
@@ -1178,16 +1224,16 @@ class Responses(SyncAPIResource):
         self,
         response_id: str,
         *,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        include_obfuscation: bool | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
-        stream: Literal[False] | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        include_obfuscation: bool | Omit = omit,
+        starting_after: int | Omit = omit,
+        stream: Literal[False] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response: ...
 
     @overload
@@ -1196,8 +1242,8 @@ class Responses(SyncAPIResource):
         response_id: str,
         *,
         stream: Literal[True],
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1212,8 +1258,8 @@ class Responses(SyncAPIResource):
         response_id: str,
         *,
         stream: bool,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1228,8 +1274,8 @@ class Responses(SyncAPIResource):
         response_id: str,
         *,
         stream: bool = False,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -1276,15 +1322,15 @@ class Responses(SyncAPIResource):
         response_id: str,
         *,
         stream: Literal[True],
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        include_obfuscation: bool | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        include_obfuscation: bool | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Stream[ResponseStreamEvent]:
         """
         Retrieves a model response with the given ID.
@@ -1325,15 +1371,15 @@ class Responses(SyncAPIResource):
         response_id: str,
         *,
         stream: bool,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        include_obfuscation: bool | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        include_obfuscation: bool | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response | Stream[ResponseStreamEvent]:
         """
         Retrieves a model response with the given ID.
@@ -1372,16 +1418,16 @@ class Responses(SyncAPIResource):
         self,
         response_id: str,
         *,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        include_obfuscation: bool | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
-        stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        include_obfuscation: bool | Omit = omit,
+        starting_after: int | Omit = omit,
+        stream: Literal[False] | Literal[True] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response | Stream[ResponseStreamEvent]:
         if not response_id:
             raise ValueError(f"Expected a non-empty value for `response_id` but received {response_id!r}")
@@ -1416,7 +1462,7 @@ class Responses(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> None:
         """
         Deletes a model response with the given ID.
@@ -1450,7 +1496,7 @@ class Responses(SyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response:
         """Cancels a model response with the given ID.
 
@@ -1477,11 +1523,167 @@ class Responses(SyncAPIResource):
             cast_to=Response,
         )
 
+    def compact(
+        self,
+        *,
+        model: Union[
+            Literal[
+                "gpt-5.2",
+                "gpt-5.2-2025-12-11",
+                "gpt-5.2-chat-latest",
+                "gpt-5.2-pro",
+                "gpt-5.2-pro-2025-12-11",
+                "gpt-5.1",
+                "gpt-5.1-2025-11-13",
+                "gpt-5.1-codex",
+                "gpt-5.1-mini",
+                "gpt-5.1-chat-latest",
+                "gpt-5",
+                "gpt-5-mini",
+                "gpt-5-nano",
+                "gpt-5-2025-08-07",
+                "gpt-5-mini-2025-08-07",
+                "gpt-5-nano-2025-08-07",
+                "gpt-5-chat-latest",
+                "gpt-4.1",
+                "gpt-4.1-mini",
+                "gpt-4.1-nano",
+                "gpt-4.1-2025-04-14",
+                "gpt-4.1-mini-2025-04-14",
+                "gpt-4.1-nano-2025-04-14",
+                "o4-mini",
+                "o4-mini-2025-04-16",
+                "o3",
+                "o3-2025-04-16",
+                "o3-mini",
+                "o3-mini-2025-01-31",
+                "o1",
+                "o1-2024-12-17",
+                "o1-preview",
+                "o1-preview-2024-09-12",
+                "o1-mini",
+                "o1-mini-2024-09-12",
+                "gpt-4o",
+                "gpt-4o-2024-11-20",
+                "gpt-4o-2024-08-06",
+                "gpt-4o-2024-05-13",
+                "gpt-4o-audio-preview",
+                "gpt-4o-audio-preview-2024-10-01",
+                "gpt-4o-audio-preview-2024-12-17",
+                "gpt-4o-audio-preview-2025-06-03",
+                "gpt-4o-mini-audio-preview",
+                "gpt-4o-mini-audio-preview-2024-12-17",
+                "gpt-4o-search-preview",
+                "gpt-4o-mini-search-preview",
+                "gpt-4o-search-preview-2025-03-11",
+                "gpt-4o-mini-search-preview-2025-03-11",
+                "chatgpt-4o-latest",
+                "codex-mini-latest",
+                "gpt-4o-mini",
+                "gpt-4o-mini-2024-07-18",
+                "gpt-4-turbo",
+                "gpt-4-turbo-2024-04-09",
+                "gpt-4-0125-preview",
+                "gpt-4-turbo-preview",
+                "gpt-4-1106-preview",
+                "gpt-4-vision-preview",
+                "gpt-4",
+                "gpt-4-0314",
+                "gpt-4-0613",
+                "gpt-4-32k",
+                "gpt-4-32k-0314",
+                "gpt-4-32k-0613",
+                "gpt-3.5-turbo",
+                "gpt-3.5-turbo-16k",
+                "gpt-3.5-turbo-0301",
+                "gpt-3.5-turbo-0613",
+                "gpt-3.5-turbo-1106",
+                "gpt-3.5-turbo-0125",
+                "gpt-3.5-turbo-16k-0613",
+                "o1-pro",
+                "o1-pro-2025-03-19",
+                "o3-pro",
+                "o3-pro-2025-06-10",
+                "o3-deep-research",
+                "o3-deep-research-2025-06-26",
+                "o4-mini-deep-research",
+                "o4-mini-deep-research-2025-06-26",
+                "computer-use-preview",
+                "computer-use-preview-2025-03-11",
+                "gpt-5-codex",
+                "gpt-5-pro",
+                "gpt-5-pro-2025-10-06",
+                "gpt-5.1-codex-max",
+            ],
+            str,
+            None,
+        ],
+        input: Union[str, Iterable[ResponseInputItemParam], None] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> CompactedResponse:
+        """
+        Compact conversation
+
+        Args:
+          model: Model ID used to generate the response, like `gpt-5` or `o3`. OpenAI offers a
+              wide range of models with different capabilities, performance characteristics,
+              and price points. Refer to the
+              [model guide](https://platform.openai.com/docs/models) to browse and compare
+              available models.
+
+          input: Text, image, or file inputs to the model, used to generate a response
+
+          instructions: A system (or developer) message inserted into the model's context. When used
+              along with `previous_response_id`, the instructions from a previous response
+              will not be carried over to the next response. This makes it simple to swap out
+              system (or developer) messages in new responses.
+
+          previous_response_id: The unique ID of the previous response to the model. Use this to create
+              multi-turn conversations. Learn more about
+              [conversation state](https://platform.openai.com/docs/guides/conversation-state).
+              Cannot be used in conjunction with `conversation`.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return self._post(
+            "/responses/compact",
+            body=maybe_transform(
+                {
+                    "model": model,
+                    "input": input,
+                    "instructions": instructions,
+                    "previous_response_id": previous_response_id,
+                },
+                response_compact_params.ResponseCompactParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=CompactedResponse,
+        )
+
 
 class AsyncResponses(AsyncAPIResource):
     @cached_property
     def input_items(self) -> AsyncInputItems:
         return AsyncInputItems(self._client)
+
+    @cached_property
+    def input_tokens(self) -> AsyncInputTokens:
+        return AsyncInputTokens(self._client)
 
     @cached_property
     def with_raw_response(self) -> AsyncResponsesWithRawResponse:
@@ -1506,39 +1708,40 @@ class AsyncResponses(AsyncAPIResource):
     async def create(
         self,
         *,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream: Optional[Literal[False]] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream: Optional[Literal[False]] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response:
         """Creates a model response.
 
@@ -1634,6 +1837,11 @@ class AsyncResponses(AsyncAPIResource):
               hit rates. Replaces the `user` field.
               [Learn more](https://platform.openai.com/docs/guides/prompt-caching).
 
+          prompt_cache_retention: The retention policy for the prompt cache. Set to `24h` to enable extended
+              prompt caching, which keeps cached prefixes active for longer, up to a maximum
+              of 24 hours.
+              [Learn more](https://platform.openai.com/docs/guides/prompt-caching#prompt-cache-retention).
+
           reasoning: **gpt-5 and o-series models only**
 
               Configuration options for
@@ -1719,10 +1927,10 @@ class AsyncResponses(AsyncAPIResource):
 
           truncation: The truncation strategy to use for the model response.
 
-              - `auto`: If the context of this response and previous ones exceeds the model's
-                context window size, the model will truncate the response to fit the context
-                window by dropping input items in the middle of the conversation.
-              - `disabled` (default): If a model response will exceed the context window size
+              - `auto`: If the input to this Response exceeds the model's context window size,
+                the model will truncate the response to fit the context window by dropping
+                items from the beginning of the conversation.
+              - `disabled` (default): If the input size will exceed the context window size
                 for a model, the request will fail with a 400 error.
 
           user: This field is being replaced by `safety_identifier` and `prompt_cache_key`. Use
@@ -1746,38 +1954,39 @@ class AsyncResponses(AsyncAPIResource):
         self,
         *,
         stream: Literal[True],
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncStream[ResponseStreamEvent]:
         """Creates a model response.
 
@@ -1880,6 +2089,11 @@ class AsyncResponses(AsyncAPIResource):
               hit rates. Replaces the `user` field.
               [Learn more](https://platform.openai.com/docs/guides/prompt-caching).
 
+          prompt_cache_retention: The retention policy for the prompt cache. Set to `24h` to enable extended
+              prompt caching, which keeps cached prefixes active for longer, up to a maximum
+              of 24 hours.
+              [Learn more](https://platform.openai.com/docs/guides/prompt-caching#prompt-cache-retention).
+
           reasoning: **gpt-5 and o-series models only**
 
               Configuration options for
@@ -1958,10 +2172,10 @@ class AsyncResponses(AsyncAPIResource):
 
           truncation: The truncation strategy to use for the model response.
 
-              - `auto`: If the context of this response and previous ones exceeds the model's
-                context window size, the model will truncate the response to fit the context
-                window by dropping input items in the middle of the conversation.
-              - `disabled` (default): If a model response will exceed the context window size
+              - `auto`: If the input to this Response exceeds the model's context window size,
+                the model will truncate the response to fit the context window by dropping
+                items from the beginning of the conversation.
+              - `disabled` (default): If the input size will exceed the context window size
                 for a model, the request will fail with a 400 error.
 
           user: This field is being replaced by `safety_identifier` and `prompt_cache_key`. Use
@@ -1985,38 +2199,39 @@ class AsyncResponses(AsyncAPIResource):
         self,
         *,
         stream: bool,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response | AsyncStream[ResponseStreamEvent]:
         """Creates a model response.
 
@@ -2119,6 +2334,11 @@ class AsyncResponses(AsyncAPIResource):
               hit rates. Replaces the `user` field.
               [Learn more](https://platform.openai.com/docs/guides/prompt-caching).
 
+          prompt_cache_retention: The retention policy for the prompt cache. Set to `24h` to enable extended
+              prompt caching, which keeps cached prefixes active for longer, up to a maximum
+              of 24 hours.
+              [Learn more](https://platform.openai.com/docs/guides/prompt-caching#prompt-cache-retention).
+
           reasoning: **gpt-5 and o-series models only**
 
               Configuration options for
@@ -2197,10 +2417,10 @@ class AsyncResponses(AsyncAPIResource):
 
           truncation: The truncation strategy to use for the model response.
 
-              - `auto`: If the context of this response and previous ones exceeds the model's
-                context window size, the model will truncate the response to fit the context
-                window by dropping input items in the middle of the conversation.
-              - `disabled` (default): If a model response will exceed the context window size
+              - `auto`: If the input to this Response exceeds the model's context window size,
+                the model will truncate the response to fit the context window by dropping
+                items from the beginning of the conversation.
+              - `disabled` (default): If the input size will exceed the context window size
                 for a model, the request will fail with a 400 error.
 
           user: This field is being replaced by `safety_identifier` and `prompt_cache_key`. Use
@@ -2222,39 +2442,40 @@ class AsyncResponses(AsyncAPIResource):
     async def create(
         self,
         *,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream: Optional[Literal[False]] | Literal[True] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream: Optional[Literal[False]] | Literal[True] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response | AsyncStream[ResponseStreamEvent]:
         return await self._post(
             "/responses",
@@ -2273,6 +2494,7 @@ class AsyncResponses(AsyncAPIResource):
                     "previous_response_id": previous_response_id,
                     "prompt": prompt,
                     "prompt_cache_key": prompt_cache_key,
+                    "prompt_cache_retention": prompt_cache_retention,
                     "reasoning": reasoning,
                     "safety_identifier": safety_identifier,
                     "service_tier": service_tier,
@@ -2305,9 +2527,9 @@ class AsyncResponses(AsyncAPIResource):
         self,
         *,
         response_id: str,
-        text_format: type[TextFormatT] | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
-        tools: Iterable[ParseableToolParam] | NotGiven = NOT_GIVEN,
+        text_format: type[TextFormatT] | Omit = omit,
+        starting_after: int | Omit = omit,
+        tools: Iterable[ParseableToolParam] | Omit = omit,
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
@@ -2321,31 +2543,32 @@ class AsyncResponses(AsyncAPIResource):
         *,
         input: Union[str, ResponseInputParam],
         model: ResponsesModel,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        text_format: type[TextFormatT] | NotGiven = NOT_GIVEN,
-        tools: Iterable[ParseableToolParam] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
+        background: Optional[bool] | Omit = omit,
+        text_format: type[TextFormatT] | Omit = omit,
+        tools: Iterable[ParseableToolParam] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -2357,35 +2580,36 @@ class AsyncResponses(AsyncAPIResource):
     def stream(
         self,
         *,
-        response_id: str | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        text_format: type[TextFormatT] | NotGiven = NOT_GIVEN,
-        tools: Iterable[ParseableToolParam] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        response_id: str | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        background: Optional[bool] | Omit = omit,
+        text_format: type[TextFormatT] | Omit = omit,
+        tools: Iterable[ParseableToolParam] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -2406,6 +2630,7 @@ class AsyncResponses(AsyncAPIResource):
             "previous_response_id": previous_response_id,
             "prompt": prompt,
             "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": prompt_cache_retention,
             "reasoning": reasoning,
             "safety_identifier": safety_identifier,
             "service_tier": service_tier,
@@ -2442,7 +2667,7 @@ class AsyncResponses(AsyncAPIResource):
 
                 if "format" in text:
                     raise TypeError("Cannot mix and match text.format with text_format")
-
+                text = copy(text)
                 text["format"] = _type_to_text_format_param(text_format)
 
             api_request = self.create(
@@ -2460,6 +2685,7 @@ class AsyncResponses(AsyncAPIResource):
                 previous_response_id=previous_response_id,
                 prompt=prompt,
                 prompt_cache_key=prompt_cache_key,
+                prompt_cache_retention=prompt_cache_retention,
                 store=store,
                 stream_options=stream_options,
                 temperature=temperature,
@@ -2486,7 +2712,7 @@ class AsyncResponses(AsyncAPIResource):
                 starting_after=None,
             )
         else:
-            if isinstance(response_id, NotGiven):
+            if isinstance(response_id, Omit):
                 raise ValueError("response_id must be provided when streaming an existing response")
 
             api_request = self.retrieve(
@@ -2508,35 +2734,36 @@ class AsyncResponses(AsyncAPIResource):
     async def parse(
         self,
         *,
-        text_format: type[TextFormatT] | NotGiven = NOT_GIVEN,
-        background: Optional[bool] | NotGiven = NOT_GIVEN,
-        conversation: Optional[response_create_params.Conversation] | NotGiven = NOT_GIVEN,
-        include: Optional[List[ResponseIncludable]] | NotGiven = NOT_GIVEN,
-        input: Union[str, ResponseInputParam] | NotGiven = NOT_GIVEN,
-        instructions: Optional[str] | NotGiven = NOT_GIVEN,
-        max_output_tokens: Optional[int] | NotGiven = NOT_GIVEN,
-        max_tool_calls: Optional[int] | NotGiven = NOT_GIVEN,
-        metadata: Optional[Metadata] | NotGiven = NOT_GIVEN,
-        model: ResponsesModel | NotGiven = NOT_GIVEN,
-        parallel_tool_calls: Optional[bool] | NotGiven = NOT_GIVEN,
-        previous_response_id: Optional[str] | NotGiven = NOT_GIVEN,
-        prompt: Optional[ResponsePromptParam] | NotGiven = NOT_GIVEN,
-        prompt_cache_key: str | NotGiven = NOT_GIVEN,
-        reasoning: Optional[Reasoning] | NotGiven = NOT_GIVEN,
-        safety_identifier: str | NotGiven = NOT_GIVEN,
-        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | NotGiven = NOT_GIVEN,
-        store: Optional[bool] | NotGiven = NOT_GIVEN,
-        stream: Optional[Literal[False]] | Literal[True] | NotGiven = NOT_GIVEN,
-        stream_options: Optional[response_create_params.StreamOptions] | NotGiven = NOT_GIVEN,
-        temperature: Optional[float] | NotGiven = NOT_GIVEN,
-        text: ResponseTextConfigParam | NotGiven = NOT_GIVEN,
-        tool_choice: response_create_params.ToolChoice | NotGiven = NOT_GIVEN,
-        tools: Iterable[ParseableToolParam] | NotGiven = NOT_GIVEN,
-        top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
-        top_p: Optional[float] | NotGiven = NOT_GIVEN,
-        truncation: Optional[Literal["auto", "disabled"]] | NotGiven = NOT_GIVEN,
-        user: str | NotGiven = NOT_GIVEN,
-        verbosity: Optional[Literal["low", "medium", "high"]] | NotGiven = NOT_GIVEN,
+        text_format: type[TextFormatT] | Omit = omit,
+        background: Optional[bool] | Omit = omit,
+        conversation: Optional[response_create_params.Conversation] | Omit = omit,
+        include: Optional[List[ResponseIncludable]] | Omit = omit,
+        input: Union[str, ResponseInputParam] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        max_output_tokens: Optional[int] | Omit = omit,
+        max_tool_calls: Optional[int] | Omit = omit,
+        metadata: Optional[Metadata] | Omit = omit,
+        model: ResponsesModel | Omit = omit,
+        parallel_tool_calls: Optional[bool] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        prompt: Optional[ResponsePromptParam] | Omit = omit,
+        prompt_cache_key: str | Omit = omit,
+        prompt_cache_retention: Optional[Literal["in-memory", "24h"]] | Omit = omit,
+        reasoning: Optional[Reasoning] | Omit = omit,
+        safety_identifier: str | Omit = omit,
+        service_tier: Optional[Literal["auto", "default", "flex", "scale", "priority"]] | Omit = omit,
+        store: Optional[bool] | Omit = omit,
+        stream: Optional[Literal[False]] | Literal[True] | Omit = omit,
+        stream_options: Optional[response_create_params.StreamOptions] | Omit = omit,
+        temperature: Optional[float] | Omit = omit,
+        text: ResponseTextConfigParam | Omit = omit,
+        tool_choice: response_create_params.ToolChoice | Omit = omit,
+        tools: Iterable[ParseableToolParam] | Omit = omit,
+        top_logprobs: Optional[int] | Omit = omit,
+        top_p: Optional[float] | Omit = omit,
+        truncation: Optional[Literal["auto", "disabled"]] | Omit = omit,
+        user: str | Omit = omit,
+        verbosity: Optional[Literal["low", "medium", "high"]] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -2550,7 +2777,7 @@ class AsyncResponses(AsyncAPIResource):
 
             if "format" in text:
                 raise TypeError("Cannot mix and match text.format with text_format")
-
+            text = copy(text)
             text["format"] = _type_to_text_format_param(text_format)
 
         tools = _make_tools(tools)
@@ -2579,6 +2806,7 @@ class AsyncResponses(AsyncAPIResource):
                     "previous_response_id": previous_response_id,
                     "prompt": prompt,
                     "prompt_cache_key": prompt_cache_key,
+                    "prompt_cache_retention": prompt_cache_retention,
                     "reasoning": reasoning,
                     "safety_identifier": safety_identifier,
                     "service_tier": service_tier,
@@ -2614,16 +2842,16 @@ class AsyncResponses(AsyncAPIResource):
         self,
         response_id: str,
         *,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        include_obfuscation: bool | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
-        stream: Literal[False] | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        include_obfuscation: bool | Omit = omit,
+        starting_after: int | Omit = omit,
+        stream: Literal[False] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response: ...
 
     @overload
@@ -2632,8 +2860,8 @@ class AsyncResponses(AsyncAPIResource):
         response_id: str,
         *,
         stream: Literal[True],
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -2648,8 +2876,8 @@ class AsyncResponses(AsyncAPIResource):
         response_id: str,
         *,
         stream: bool,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -2664,8 +2892,8 @@ class AsyncResponses(AsyncAPIResource):
         response_id: str,
         *,
         stream: bool = False,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
@@ -2712,15 +2940,15 @@ class AsyncResponses(AsyncAPIResource):
         response_id: str,
         *,
         stream: Literal[True],
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        include_obfuscation: bool | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        include_obfuscation: bool | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> AsyncStream[ResponseStreamEvent]:
         """
         Retrieves a model response with the given ID.
@@ -2761,15 +2989,15 @@ class AsyncResponses(AsyncAPIResource):
         response_id: str,
         *,
         stream: bool,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        include_obfuscation: bool | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        include_obfuscation: bool | Omit = omit,
+        starting_after: int | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response | AsyncStream[ResponseStreamEvent]:
         """
         Retrieves a model response with the given ID.
@@ -2808,16 +3036,16 @@ class AsyncResponses(AsyncAPIResource):
         self,
         response_id: str,
         *,
-        include: List[ResponseIncludable] | NotGiven = NOT_GIVEN,
-        include_obfuscation: bool | NotGiven = NOT_GIVEN,
-        starting_after: int | NotGiven = NOT_GIVEN,
-        stream: Literal[False] | Literal[True] | NotGiven = NOT_GIVEN,
+        include: List[ResponseIncludable] | Omit = omit,
+        include_obfuscation: bool | Omit = omit,
+        starting_after: int | Omit = omit,
+        stream: Literal[False] | Literal[True] | Omit = omit,
         # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
         # The extra values given here take precedence over values defined on the client or passed to this method.
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response | AsyncStream[ResponseStreamEvent]:
         if not response_id:
             raise ValueError(f"Expected a non-empty value for `response_id` but received {response_id!r}")
@@ -2852,7 +3080,7 @@ class AsyncResponses(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> None:
         """
         Deletes a model response with the given ID.
@@ -2886,7 +3114,7 @@ class AsyncResponses(AsyncAPIResource):
         extra_headers: Headers | None = None,
         extra_query: Query | None = None,
         extra_body: Body | None = None,
-        timeout: float | httpx.Timeout | None | NotGiven = NOT_GIVEN,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
     ) -> Response:
         """Cancels a model response with the given ID.
 
@@ -2913,6 +3141,158 @@ class AsyncResponses(AsyncAPIResource):
             cast_to=Response,
         )
 
+    async def compact(
+        self,
+        *,
+        model: Union[
+            Literal[
+                "gpt-5.2",
+                "gpt-5.2-2025-12-11",
+                "gpt-5.2-chat-latest",
+                "gpt-5.2-pro",
+                "gpt-5.2-pro-2025-12-11",
+                "gpt-5.1",
+                "gpt-5.1-2025-11-13",
+                "gpt-5.1-codex",
+                "gpt-5.1-mini",
+                "gpt-5.1-chat-latest",
+                "gpt-5",
+                "gpt-5-mini",
+                "gpt-5-nano",
+                "gpt-5-2025-08-07",
+                "gpt-5-mini-2025-08-07",
+                "gpt-5-nano-2025-08-07",
+                "gpt-5-chat-latest",
+                "gpt-4.1",
+                "gpt-4.1-mini",
+                "gpt-4.1-nano",
+                "gpt-4.1-2025-04-14",
+                "gpt-4.1-mini-2025-04-14",
+                "gpt-4.1-nano-2025-04-14",
+                "o4-mini",
+                "o4-mini-2025-04-16",
+                "o3",
+                "o3-2025-04-16",
+                "o3-mini",
+                "o3-mini-2025-01-31",
+                "o1",
+                "o1-2024-12-17",
+                "o1-preview",
+                "o1-preview-2024-09-12",
+                "o1-mini",
+                "o1-mini-2024-09-12",
+                "gpt-4o",
+                "gpt-4o-2024-11-20",
+                "gpt-4o-2024-08-06",
+                "gpt-4o-2024-05-13",
+                "gpt-4o-audio-preview",
+                "gpt-4o-audio-preview-2024-10-01",
+                "gpt-4o-audio-preview-2024-12-17",
+                "gpt-4o-audio-preview-2025-06-03",
+                "gpt-4o-mini-audio-preview",
+                "gpt-4o-mini-audio-preview-2024-12-17",
+                "gpt-4o-search-preview",
+                "gpt-4o-mini-search-preview",
+                "gpt-4o-search-preview-2025-03-11",
+                "gpt-4o-mini-search-preview-2025-03-11",
+                "chatgpt-4o-latest",
+                "codex-mini-latest",
+                "gpt-4o-mini",
+                "gpt-4o-mini-2024-07-18",
+                "gpt-4-turbo",
+                "gpt-4-turbo-2024-04-09",
+                "gpt-4-0125-preview",
+                "gpt-4-turbo-preview",
+                "gpt-4-1106-preview",
+                "gpt-4-vision-preview",
+                "gpt-4",
+                "gpt-4-0314",
+                "gpt-4-0613",
+                "gpt-4-32k",
+                "gpt-4-32k-0314",
+                "gpt-4-32k-0613",
+                "gpt-3.5-turbo",
+                "gpt-3.5-turbo-16k",
+                "gpt-3.5-turbo-0301",
+                "gpt-3.5-turbo-0613",
+                "gpt-3.5-turbo-1106",
+                "gpt-3.5-turbo-0125",
+                "gpt-3.5-turbo-16k-0613",
+                "o1-pro",
+                "o1-pro-2025-03-19",
+                "o3-pro",
+                "o3-pro-2025-06-10",
+                "o3-deep-research",
+                "o3-deep-research-2025-06-26",
+                "o4-mini-deep-research",
+                "o4-mini-deep-research-2025-06-26",
+                "computer-use-preview",
+                "computer-use-preview-2025-03-11",
+                "gpt-5-codex",
+                "gpt-5-pro",
+                "gpt-5-pro-2025-10-06",
+                "gpt-5.1-codex-max",
+            ],
+            str,
+            None,
+        ],
+        input: Union[str, Iterable[ResponseInputItemParam], None] | Omit = omit,
+        instructions: Optional[str] | Omit = omit,
+        previous_response_id: Optional[str] | Omit = omit,
+        # Use the following arguments if you need to pass additional parameters to the API that aren't available via kwargs.
+        # The extra values given here take precedence over values defined on the client or passed to this method.
+        extra_headers: Headers | None = None,
+        extra_query: Query | None = None,
+        extra_body: Body | None = None,
+        timeout: float | httpx.Timeout | None | NotGiven = not_given,
+    ) -> CompactedResponse:
+        """
+        Compact conversation
+
+        Args:
+          model: Model ID used to generate the response, like `gpt-5` or `o3`. OpenAI offers a
+              wide range of models with different capabilities, performance characteristics,
+              and price points. Refer to the
+              [model guide](https://platform.openai.com/docs/models) to browse and compare
+              available models.
+
+          input: Text, image, or file inputs to the model, used to generate a response
+
+          instructions: A system (or developer) message inserted into the model's context. When used
+              along with `previous_response_id`, the instructions from a previous response
+              will not be carried over to the next response. This makes it simple to swap out
+              system (or developer) messages in new responses.
+
+          previous_response_id: The unique ID of the previous response to the model. Use this to create
+              multi-turn conversations. Learn more about
+              [conversation state](https://platform.openai.com/docs/guides/conversation-state).
+              Cannot be used in conjunction with `conversation`.
+
+          extra_headers: Send extra headers
+
+          extra_query: Add additional query parameters to the request
+
+          extra_body: Add additional JSON properties to the request
+
+          timeout: Override the client-level default timeout for this request, in seconds
+        """
+        return await self._post(
+            "/responses/compact",
+            body=await async_maybe_transform(
+                {
+                    "model": model,
+                    "input": input,
+                    "instructions": instructions,
+                    "previous_response_id": previous_response_id,
+                },
+                response_compact_params.ResponseCompactParams,
+            ),
+            options=make_request_options(
+                extra_headers=extra_headers, extra_query=extra_query, extra_body=extra_body, timeout=timeout
+            ),
+            cast_to=CompactedResponse,
+        )
+
 
 class ResponsesWithRawResponse:
     def __init__(self, responses: Responses) -> None:
@@ -2930,6 +3310,9 @@ class ResponsesWithRawResponse:
         self.cancel = _legacy_response.to_raw_response_wrapper(
             responses.cancel,
         )
+        self.compact = _legacy_response.to_raw_response_wrapper(
+            responses.compact,
+        )
         self.parse = _legacy_response.to_raw_response_wrapper(
             responses.parse,
         )
@@ -2937,6 +3320,10 @@ class ResponsesWithRawResponse:
     @cached_property
     def input_items(self) -> InputItemsWithRawResponse:
         return InputItemsWithRawResponse(self._responses.input_items)
+
+    @cached_property
+    def input_tokens(self) -> InputTokensWithRawResponse:
+        return InputTokensWithRawResponse(self._responses.input_tokens)
 
 
 class AsyncResponsesWithRawResponse:
@@ -2955,6 +3342,9 @@ class AsyncResponsesWithRawResponse:
         self.cancel = _legacy_response.async_to_raw_response_wrapper(
             responses.cancel,
         )
+        self.compact = _legacy_response.async_to_raw_response_wrapper(
+            responses.compact,
+        )
         self.parse = _legacy_response.async_to_raw_response_wrapper(
             responses.parse,
         )
@@ -2962,6 +3352,10 @@ class AsyncResponsesWithRawResponse:
     @cached_property
     def input_items(self) -> AsyncInputItemsWithRawResponse:
         return AsyncInputItemsWithRawResponse(self._responses.input_items)
+
+    @cached_property
+    def input_tokens(self) -> AsyncInputTokensWithRawResponse:
+        return AsyncInputTokensWithRawResponse(self._responses.input_tokens)
 
 
 class ResponsesWithStreamingResponse:
@@ -2980,10 +3374,17 @@ class ResponsesWithStreamingResponse:
         self.cancel = to_streamed_response_wrapper(
             responses.cancel,
         )
+        self.compact = to_streamed_response_wrapper(
+            responses.compact,
+        )
 
     @cached_property
     def input_items(self) -> InputItemsWithStreamingResponse:
         return InputItemsWithStreamingResponse(self._responses.input_items)
+
+    @cached_property
+    def input_tokens(self) -> InputTokensWithStreamingResponse:
+        return InputTokensWithStreamingResponse(self._responses.input_tokens)
 
 
 class AsyncResponsesWithStreamingResponse:
@@ -3002,15 +3403,22 @@ class AsyncResponsesWithStreamingResponse:
         self.cancel = async_to_streamed_response_wrapper(
             responses.cancel,
         )
+        self.compact = async_to_streamed_response_wrapper(
+            responses.compact,
+        )
 
     @cached_property
     def input_items(self) -> AsyncInputItemsWithStreamingResponse:
         return AsyncInputItemsWithStreamingResponse(self._responses.input_items)
 
+    @cached_property
+    def input_tokens(self) -> AsyncInputTokensWithStreamingResponse:
+        return AsyncInputTokensWithStreamingResponse(self._responses.input_tokens)
 
-def _make_tools(tools: Iterable[ParseableToolParam] | NotGiven) -> List[ToolParam] | NotGiven:
+
+def _make_tools(tools: Iterable[ParseableToolParam] | Omit) -> List[ToolParam] | Omit:
     if not is_given(tools):
-        return NOT_GIVEN
+        return omit
 
     converted_tools: List[ToolParam] = []
     for tool in tools:

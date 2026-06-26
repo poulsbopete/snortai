@@ -12,6 +12,7 @@ from .response_input_param import ResponseInputParam
 from .response_prompt_param import ResponsePromptParam
 from .tool_choice_mcp_param import ToolChoiceMcpParam
 from ..shared_params.metadata import Metadata
+from .tool_choice_shell_param import ToolChoiceShellParam
 from .tool_choice_types_param import ToolChoiceTypesParam
 from ..shared_params.reasoning import Reasoning
 from .tool_choice_custom_param import ToolChoiceCustomParam
@@ -19,6 +20,7 @@ from .tool_choice_allowed_param import ToolChoiceAllowedParam
 from .response_text_config_param import ResponseTextConfigParam
 from .tool_choice_function_param import ToolChoiceFunctionParam
 from .response_conversation_param import ResponseConversationParam
+from .tool_choice_apply_patch_param import ToolChoiceApplyPatchParam
 from ..shared_params.responses_model import ResponsesModel
 
 __all__ = [
@@ -134,8 +136,8 @@ class ResponseCreateParamsBase(TypedDict, total=False):
     """
 
     prompt: Optional[ResponsePromptParam]
-    """Reference to a prompt template and its variables.
-
+    """
+    Reference to a prompt template and its variables.
     [Learn more](https://platform.openai.com/docs/guides/text?api-mode=responses#reusable-prompts).
     """
 
@@ -144,6 +146,14 @@ class ResponseCreateParamsBase(TypedDict, total=False):
     Used by OpenAI to cache responses for similar requests to optimize your cache
     hit rates. Replaces the `user` field.
     [Learn more](https://platform.openai.com/docs/guides/prompt-caching).
+    """
+
+    prompt_cache_retention: Optional[Literal["in-memory", "24h"]]
+    """The retention policy for the prompt cache.
+
+    Set to `24h` to enable extended prompt caching, which keeps cached prefixes
+    active for longer, up to a maximum of 24 hours.
+    [Learn more](https://platform.openai.com/docs/guides/prompt-caching#prompt-cache-retention).
     """
 
     reasoning: Optional[Reasoning]
@@ -252,10 +262,10 @@ class ResponseCreateParamsBase(TypedDict, total=False):
     truncation: Optional[Literal["auto", "disabled"]]
     """The truncation strategy to use for the model response.
 
-    - `auto`: If the context of this response and previous ones exceeds the model's
-      context window size, the model will truncate the response to fit the context
-      window by dropping input items in the middle of the conversation.
-    - `disabled` (default): If a model response will exceed the context window size
+    - `auto`: If the input to this Response exceeds the model's context window size,
+      the model will truncate the response to fit the context window by dropping
+      items from the beginning of the conversation.
+    - `disabled` (default): If the input size will exceed the context window size
       for a model, the request will fail with a 400 error.
     """
 
@@ -273,6 +283,8 @@ Conversation: TypeAlias = Union[str, ResponseConversationParam]
 
 
 class StreamOptions(TypedDict, total=False):
+    """Options for streaming responses. Only set this when you set `stream: true`."""
+
     include_obfuscation: bool
     """When true, stream obfuscation will be enabled.
 
@@ -292,6 +304,8 @@ ToolChoice: TypeAlias = Union[
     ToolChoiceFunctionParam,
     ToolChoiceMcpParam,
     ToolChoiceCustomParam,
+    ToolChoiceApplyPatchParam,
+    ToolChoiceShellParam,
 ]
 
 
